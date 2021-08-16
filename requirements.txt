@@ -1,0 +1,17 @@
+joblib==1.0.1
+keras-nightly==2.5.0.dev2021032900
+Keras-Preprocessing==1.1.2
+matplotlib==3.4.2
+matplotlib-inline==0.1.2
+numpy==1.19.5
+opencv-python==4.5.2.52
+playsound==1.2.2
+PyQt5==5.15.4
+PyQt5-Qt5==5.15.2
+PyQt5-sip==12.9.0
+scipy==1.6.3
+tensorboard==2.5.0
+tensorboard-data-server==0.6.1
+tensorboard-plugin-wit==1.8.0
+tensorflow==2.5.0
+tensorflow-estimator==2.5.0
