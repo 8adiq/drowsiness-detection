@@ -7,6 +7,7 @@ import numpy as np
 
 
 class VideoThread(QThread):
+    """Video thread class to handle opencv video window"""
     change_pixmap_signal = pyqtSignal(np.ndarray)
 
     def __init__(self, camera):
@@ -31,6 +32,8 @@ class VideoThread(QThread):
 
 
 class Detection(QtWidgets.QWidget):
+    """Detect position of eyes"""
+
     def __init__(self, face_haarcascade_name, eyes_haarcascade_name, parent=None):
         super().__init__(parent)
         self.eye_classifier = cv2.CascadeClassifier(

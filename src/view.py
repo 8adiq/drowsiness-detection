@@ -8,9 +8,7 @@ from PyQt5 import QtMultimedia
 import cv2
 import numpy as np
 
-from controller import Detection
-
-
+from controller import Detection, VideoThread
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -26,27 +24,27 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui()
 
-
     # User interface of the application
+
     def ui(self):
         """Setting up the UI"""
 
-        #general window settings
+        # general window settings
         self.setWindowTitle('Drowsiness detector')
         self.setFixedSize(QtCore.QSize(900, 600))
         self.show()
 
-        #setting up the layouts
+        # setting up the layouts
         self.general_layout = QtWidgets.QVBoxLayout()
         self.camera_layout = QtWidgets.QVBoxLayout()
         self.info_layout = QtWidgets.QHBoxLayout()
 
-        #container and layout for the feed
+        # container and layout for the feed
         self.feed_container = QtWidgets.QWidget()
         self.feed_layout = QtWidgets.QVBoxLayout()
         self.feed_container.setLayout(self.feed_layout)
 
-        #container and layout for the settings
+        # container and layout for the settings
         self.settings_container = QtWidgets.QWidget()
         self.settings_layout = QtWidgets.QVBoxLayout()
         self.settings_container.setLayout(self.settings_layout)
@@ -54,17 +52,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.general_layout.addLayout(self.camera_layout)
         self.general_layout.addLayout(self.info_layout)
 
-        #separator widget [line dividing feed and settings]
+        # separator widget [line dividing feed and settings]
         separator = QtWidgets.QFrame()
         separator.setFrameShape(QtWidgets.QFrame.VLine)
         separator.setLineWidth(1)
 
-        #adding containers to info layout
+        # adding containers to info layout
         self.info_layout.addWidget(self.feed_container)
         self.info_layout.addWidget(separator)
         self.info_layout.addWidget(self.settings_container)
 
-        #setting up the central widget
+        # setting up the central widget
         self.central_widget = QtWidgets.QWidget()
         self.central_widget.setLayout(self.general_layout)
         self.setCentralWidget(self.central_widget)
@@ -99,14 +97,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
         face_haarcascade = 'haarcascade_frontalface_default.xml'
         eyes_haarcascade = 'haarcascade_eye.xml'
-        self.detection = Detection(face_haarcascade_name=face_haarcascade, eyes_haarcascade_name=eyes_haarcascade)
-
+        self.detection = Detection(
+            face_haarcascade_name=face_haarcascade, eyes_haarcascade_name=eyes_haarcascade)
 
     def menu_bar(self):
         """Setting up the menu bar"""
 
         self.menu = self.menuBar()
-        self.menu.setStyleSheet('font-size: 15px; background-color: #21252b; color: #abb2bf;')
+        self.menu.setStyleSheet(
+            'font-size: 15px; background-color: #21252b; color: #abb2bf;')
 
         self.exit_action = QtWidgets.QAction('Exit', self)
         self.exit_action.triggered.connect(sys.exit)
@@ -119,7 +118,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def camera_section(self):
         """Setting up the camera section"""
 
-        self.background = QtGui.QPixmap(self.display_width, self.display_height)
+        self.background = QtGui.QPixmap(
+            self.display_width, self.display_height)
         self.background.fill(QtGui.QColor('darkGray'))
         self.camera_label.setPixmap(self.background)
         self.camera_label.setAlignment(QtCore.Qt.AlignCenter)
@@ -158,13 +158,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.start_button.pressed.connect(self.control_btn)
 
-
     def control_btn(self):
         if not self.start_button.isChecked():
             self.start_btn()
         else:
             self.stop_btn()
-         
+
     def start_btn(self):
         self._run = True
         self.start_thread()
@@ -187,7 +186,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         camera_label = QtWidgets.QLabel('Select camera:          ')
         camera_combo_box = QtWidgets.QComboBox()
-        self.available_cameras = [device.description() for device in QtMultimedia.QCameraInfo.availableCameras()]
+        self.available_cameras = [device.description(
+        ) for device in QtMultimedia.QCameraInfo.availableCameras()]
         camera_combo_box.addItems(self.available_cameras)
         bottom_layout.addWidget(camera_label, 0, 0)
         bottom_layout.addWidget(camera_combo_box, 0, 1)
@@ -207,7 +207,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def selectionChange(self, i):
         self.camera = i
-        print(self.camera)
 
     @QtCore.pyqtSlot(np.ndarray)
     def update_image(self, cv_img):
@@ -224,9 +223,19 @@ class MainWindow(QtWidgets.QMainWindow):
         rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
         h, w, ch = rgb_image.shape
         bytes_per_line = ch * w
-        convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
-        p = convert_to_Qt_format.scaled(self.display_width, self.display_height, QtCore.Qt.KeepAspectRatio)
+        convert_to_Qt_format = QtGui.QImage(
+            rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
+        p = convert_to_Qt_format.scaled(
+            self.display_width, self.display_height, QtCore.Qt.KeepAspectRatio)
         return QtGui.QPixmap.fromImage(p)
+
+    def start_thread(self):
+        # Create the video capture thread
+        self.thread = VideoThread(self.camera)
+        # Connect its signal the update_image slot
+        self.thread.change_pixmap_signal.connect(self.update_image)
+        # Start the Thread
+        self.thread.start()
 
 
 if __name__ == '__main__':
