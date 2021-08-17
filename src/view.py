@@ -5,6 +5,12 @@ from PyQt5 import QtCore
 from PyQt5 import QtGui
 from PyQt5 import QtMultimedia
 
+import cv2
+import numpy as np
+
+from controller import Detection
+
+
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -91,6 +97,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.camera_section()
         self.info_section()
 
+        face_haarcascade = 'haarcascade_frontalface_default.xml'
+        eyes_haarcascade = 'haarcascade_eye.xml'
+        self.detection = Detection(face_haarcascade_name=face_haarcascade, eyes_haarcascade_name=eyes_haarcascade)
+
+
     def menu_bar(self):
         """Setting up the menu bar"""
 
@@ -145,7 +156,26 @@ class MainWindow(QtWidgets.QMainWindow):
         self.start_button.setFixedSize(QtCore.QSize(70, 30))
         bottom_layout.addWidget(self.start_button)
 
+        self.start_button.pressed.connect(self.control_btn)
 
+
+    def control_btn(self):
+        if not self.start_button.isChecked():
+            self.start_btn()
+        else:
+            self.stop_btn()
+         
+    def start_btn(self):
+        self._run = True
+        self.start_thread()
+        self.start_button.setText('Stop')
+        print('Starting execution')
+
+    def stop_btn(self):
+        self._run = False
+        self.thread.stop()
+        self.start_button.setText('Start')
+        print('Stopping execution')
 
     def settings(self):
         header = QtWidgets.QLabel('<h2>Settings</h2>')
@@ -178,6 +208,25 @@ class MainWindow(QtWidgets.QMainWindow):
     def selectionChange(self, i):
         self.camera = i
         print(self.camera)
+
+    @QtCore.pyqtSlot(np.ndarray)
+    def update_image(self, cv_img):
+        """Updates the image_label with a new opencv image"""
+        image_data_slot = self.detection.image_data_slot(cv_img)
+        qt_img = self.convert_cv_qt(image_data_slot)
+        if self._run:
+            self.camera_label.setPixmap(qt_img)
+        else:
+            self.camera_label.setPixmap(self.background)
+
+    def convert_cv_qt(self, cv_img):
+        """Convert from an opencv image to QPixmap"""
+        rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+        h, w, ch = rgb_image.shape
+        bytes_per_line = ch * w
+        convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
+        p = convert_to_Qt_format.scaled(self.display_width, self.display_height, QtCore.Qt.KeepAspectRatio)
+        return QtGui.QPixmap.fromImage(p)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 from PyQt5 import QtGui
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QThread, pyqtSignal
+
 import cv2
 import numpy as np
 
