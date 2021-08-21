@@ -10,6 +10,10 @@ import numpy as np
 
 from controller import Detection, VideoThread
 
+s = 0
+m = 0
+h = 0
+
 
 class MainWindow(QtWidgets.QMainWindow):
     """Main window of the program"""
@@ -21,6 +25,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.display_height = 400
         self.camera_label = QtWidgets.QLabel(self)
         self._run = False
+
+        # timer event
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.time)
 
         self.ui()
 
@@ -142,9 +150,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.feed_layout.addLayout(bottom_layout)
 
         duration = QtWidgets.QLabel('Duration:                    ')
-        placeholder_duration = QtWidgets.QLabel('00 : 00 : 00')
+        self.placeholder_duration = QtWidgets.QLabel('00 : 00 : 00')
         bottom_layout.addWidget(duration, 0, 0)
-        bottom_layout.addWidget(placeholder_duration, 0, 1)
+        bottom_layout.addWidget(self.placeholder_duration, 0, 1)
 
         activity = QtWidgets.QLabel('Activity:')
         placeholder_activity = QtWidgets.QLabel('Drowsiness Detected')
@@ -167,12 +175,14 @@ class MainWindow(QtWidgets.QMainWindow):
     def start_btn(self):
         self._run = True
         self.start_thread()
+        self.start_timer()
         self.start_button.setText('Stop')
         print('Starting execution')
 
     def stop_btn(self):
         self._run = False
         self.thread.stop()
+        self.reset_timer()
         self.start_button.setText('Start')
         print('Stopping execution')
 
@@ -236,6 +246,62 @@ class MainWindow(QtWidgets.QMainWindow):
         self.thread.change_pixmap_signal.connect(self.update_image)
         # Start the Thread
         self.thread.start()
+
+    def reset_timer(self):
+        global s, m, h
+
+        self.timer.stop()
+
+        h = 0
+        m = 0
+        s = 0
+
+        hr, min, sec = self.format_time(h, m, s)
+
+        time = f"{hr} : {min} : {sec}"
+
+
+        self.placeholder_duration.setText(time)
+
+    def start_timer(self):
+        global s, m, h
+        self.timer.start(1000)
+
+
+    def time(self):
+        global s, m, h
+
+        if s < 59:
+            s += 1
+        else:
+            if m < 59:
+                s = 0
+                m += 1
+            elif m == 59 and h < 24:
+                h += 1
+                m = 0
+                s = 0
+            else:
+                self.timer.stop()
+        
+        hr, min, sec = self.format_time(h, m, s)
+
+        time = f"{hr} : {min} : {sec}"
+
+        self.placeholder_duration.setText(time)
+
+    def format_time(self, h, m, s):
+        if len(str(h)) == 1:
+            h = '0' + str(h)
+
+        if len(str(m)) == 1:
+            m = '0' + str(m)
+
+        if len(str(s)) == 1:
+            s = '0' + str(s)
+
+        return h, m, s
+
 
 
 if __name__ == '__main__':
