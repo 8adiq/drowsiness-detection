@@ -1,4 +1,5 @@
 import sys
+from datetime import datetime
 
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
@@ -95,6 +96,10 @@ class MainWindow(QtWidgets.QMainWindow):
             .QLabel {
                 color: #abb2bf;
                 font-size: 15px;
+            }
+
+            .QDialog {
+                background-color: #282c34;
             }
 
         ''')
@@ -211,6 +216,7 @@ class MainWindow(QtWidgets.QMainWindow):
         log_button = QtWidgets.QPushButton('LOGS')
         log_button.setFixedSize(QtCore.QSize(70, 30))
         bottom_layout.addWidget(log_button)
+        log_button.clicked.connect(self.LogWindow)
 
         self.camera = 0
         camera_combo_box.currentIndexChanged.connect(self.selectionChange)
@@ -301,6 +307,67 @@ class MainWindow(QtWidgets.QMainWindow):
             s = '0' + str(s)
 
         return h, m, s
+
+    def LogWindow(self):
+
+        log = LogsWindow(self)
+        log.exec_()
+
+class LogsWindow(QtWidgets.QDialog):
+    "Logs window to give information about a session"
+
+    def __init__(self, *args, **kwargs):
+        super(LogsWindow, self).__init__(*args, **kwargs)
+        
+        self.setWindowTitle('LOGS')
+        self.setFixedSize(QtCore.QSize(500, 500))
+
+        log_layout = QtWidgets.QVBoxLayout(self)
+        date_time = datetime.today().now()
+
+        title_label = QtWidgets.QLabel(f"LOG File [{date_time.strftime('%Y-%m-%d -- %H:%M:%S')}]")
+        title_label.setAlignment(QtCore.Qt.AlignCenter)
+        log_layout.addWidget(title_label)
+
+        formLayout =QtWidgets.QFormLayout()
+        groupBox = QtWidgets.QGroupBox()
+        time = []
+        status = []
+
+        for i in  range(10):
+            self.count += 1
+            time.append(QtWidgets.QLabel(f"{date_time.strftime('%H:%M:%S')} --"))
+            status.append(QtWidgets.QLabel("Event"))
+            formLayout.addRow(time[i], status[i])
+
+        groupBox.setLayout(formLayout)
+        scroll = QtWidgets.QScrollArea()
+        scroll.setWidget(groupBox)
+        scroll.setWidgetResizable(True)
+        scroll.setFixedHeight(400)
+        log_layout.addWidget(scroll)
+        
+        self.setLayout(log_layout)
+
+
+        self.setStyleSheet(
+            '''
+            .QLabel {
+                color: #000;
+                font-size: 18px;
+            }           
+            '''
+        )
+
+        groupBox.setStyleSheet(
+            '''
+            .QLabel {
+                color: #000;
+                font-weight: 300;
+            }
+            '''
+        )
+
 
 
 
